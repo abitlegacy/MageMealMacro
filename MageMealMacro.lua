@@ -20,6 +20,15 @@ local Foods = {
 	"Conjured Bread",
 	"Conjured Muffin"
 }
+local SpiritGear = {
+	"Magus Long Staff of Spirit",
+	"Wizard's Hand of Spirit"
+}
+local NormalGear = {
+	"Witchblade",
+	"Spirit of Aquementas",
+	"Bonecreeper Stylus"
+}
 local AURAS = {Drink = true, Food = true}
 
 local ICONS = {
@@ -42,7 +51,9 @@ local ICONS = {
 }
 
 local health_threshold = .9
+local biscuit_threshold = .25
 local mana_threshold = 1
+local gear_threshold = .10
 
 
 MageMealMacro:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -80,8 +91,24 @@ function MageMealMacro:Update()
 		self:SetAttribute("macrotext", "/run MageMealMacro:Update()");
 	else
 		local macrotext = "/run MageMealMacro:Update()\n"
+		if UnitPower("player")/UnitPowerMax("player") < gear_threshold and self.drink ~= nil then
+			for i=1, #SpiritGear do
+				macrotext = macrotext .. "/equip [nomod] " .. SpiritGear[i] .. "\n"
+			end			
+		elseif UnitPower("player")/UnitPowerMax("player") > gear_threshold and self.drink ~= nil then
+			for i=1, #NormalGear do
+				macrotext = macrotext .. "/equip [nomod] " .. NormalGear[i] .. "\n"
+			end
+		end
 		if UnitPower("player")/UnitPowerMax("player") < mana_threshold and self.drink ~= nil then
-			macrotext = macrotext .. "/use " .. self.drink .. "\n"
+			if 
+				UnitPower("player")/UnitPowerMax("player") < biscuit_threshold and 
+				self.drink ~= nil and 
+				GetItemCount("Enriched Manna Biscuit") > 0 then
+					macrotext = macrotext .. "/use Enriched Manna Biscuit\n"
+			else
+				macrotext = macrotext .. "/use " .. self.drink .. "\n"
+			end
 		end
 		if UnitHealth("player")/UnitHealthMax("player") < health_threshold and self.food ~= nil then
 			macrotext = macrotext .. "/use " .. self.food .. "\n"
@@ -92,6 +119,7 @@ end
 
 MageMealMacro:RegisterEvent("BAG_UPDATE")
 function MageMealMacro:BAG_UPDATE()
+	if UnitAffectingCombat("player") then return end
 	for i=1, #Foods do
 		if GetItemCount(Foods[i]) > 0 then
 			self.food = Foods[i]
