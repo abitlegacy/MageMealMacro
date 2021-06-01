@@ -3,6 +3,8 @@ MageMealMacro:SetScript("OnEvent", function(self, event, ...) self[event](self, 
 MageMealMacro:SetAttribute("type", "macro");
 MageMealMacro:SetAttribute("macrotext", "/run MageMealMacro:Update()");
 local Drinks = {
+	"Conjured Glacial Water",
+	"Conjured Mountain Spring Water",
 	"Conjured Crystal Water",
 	"Conjured Sparkling Water",
 	"Conjured Mineral Water",
@@ -12,6 +14,7 @@ local Drinks = {
 	"Conjured Water"
 }
 local Foods = {
+	"Conjured Croissant",
 	"Conjured Cinnamon Roll",
 	"Conjured Sweet Roll",
 	"Conjured Sourdough",
@@ -20,19 +23,12 @@ local Foods = {
 	"Conjured Bread",
 	"Conjured Muffin"
 }
-local SpiritGear = {
-	"Magus Long Staff of Spirit",
-	"Wizard's Hand of Spirit"
-}
-local NormalGear = {
-	"Witchblade",
-	"Spirit of Aquementas",
-	"Bonecreeper Stylus"
-}
 local AURAS = {Drink = true, Food = true}
 
 local ICONS = {
   -- Drink
+  [22018] = true,
+  [30703] = true,
   [8079] = true,
   [8078] = true,
   [8077] = true,
@@ -41,6 +37,7 @@ local ICONS = {
   [5350] = true,
   [2288] = true,
   -- Food
+  [22019] = true,
   [22895] = true,
   [8076] = true,
   [8075] = true,
@@ -50,10 +47,8 @@ local ICONS = {
   [587] = true
 }
 
-local health_threshold = .9
-local biscuit_threshold = .25
+local health_threshold = .95
 local mana_threshold = 1
-local gear_threshold = .10
 
 
 MageMealMacro:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -63,18 +58,13 @@ function MageMealMacro:PLAYER_ENTERING_WORLD()
     LoadAddOn("Blizzard_MacroUI")
   end
   hooksecurefunc("MacroFrame_SaveMacro", function() MageMealMacro:BAG_UPDATE() end)
-	if GetMacroIndexByName("MageMealMacro") == 0 then
-		-- Max 36 macros per account
-		if GetNumMacros() == 36 then
-			DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99MageMealMacro|r: |cffff0000WARNING|r: Unable to create macro. Please free up a macro slot and reload your UI.")
-			return
-		end
-		CreateMacro("MageMealMacro", "INV_MISC_QUESTIONMARK", "#showtooltip\n/cast [btn:2] Conjure Water\n/cast [mod:ctrl] Conjure Food\n/click MageMealMacro", nil)
+	if GetMacroIndexByName("Mage Meal") == 0 then
+		CreateMacro("Mage Meal", "INV_MISC_QUESTIONMARK", "#showtooltip\n/cast [mod:alt] Ritual of Refreshment\n/cast [btn:2][mod:shift] Conjure Water\n/cast [btn:3][mod:ctrl] Conjure Food\n/click [nomod] MageMealMacro", nil)
 	end
 end
 
 function MageMealMacro:HasDrinkAura()
-  for i = 1, 16 do
+  for i = 1, 32 do
     local aura, icon = UnitAura("player", i)
     if not aura or not icon then
       return false
@@ -91,24 +81,8 @@ function MageMealMacro:Update()
 		self:SetAttribute("macrotext", "/run MageMealMacro:Update()");
 	else
 		local macrotext = "/run MageMealMacro:Update()\n"
-		if UnitPower("player")/UnitPowerMax("player") < gear_threshold and self.drink ~= nil then
-			for i=1, #SpiritGear do
-				macrotext = macrotext .. "/equip [nomod] " .. SpiritGear[i] .. "\n"
-			end			
-		elseif UnitPower("player")/UnitPowerMax("player") > gear_threshold and self.drink ~= nil then
-			for i=1, #NormalGear do
-				macrotext = macrotext .. "/equip [nomod] " .. NormalGear[i] .. "\n"
-			end
-		end
 		if UnitPower("player")/UnitPowerMax("player") < mana_threshold and self.drink ~= nil then
-			if 
-				UnitPower("player")/UnitPowerMax("player") < biscuit_threshold and 
-				self.drink ~= nil and 
-				GetItemCount("Enriched Manna Biscuit") > 0 then
-					macrotext = macrotext .. "/use Enriched Manna Biscuit\n"
-			else
-				macrotext = macrotext .. "/use " .. self.drink .. "\n"
-			end
+			macrotext = macrotext .. "/use " .. self.drink .. "\n"
 		end
 		if UnitHealth("player")/UnitHealthMax("player") < health_threshold and self.food ~= nil then
 			macrotext = macrotext .. "/use " .. self.food .. "\n"
@@ -130,7 +104,7 @@ function MageMealMacro:BAG_UPDATE()
 		if GetItemCount(Drinks[i]) > 0 then
 			self.drink = Drinks[i]
 			if not UnitAffectingCombat("player") then
-				SetMacroItem("MageMealMacro", Drinks[i])
+				SetMacroItem("Mage Meal", Drinks[i])
 				self:Update()
 			end
 			break
