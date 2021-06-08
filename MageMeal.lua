@@ -3,7 +3,8 @@ MageMealMacro:SetScript("OnEvent", function(self, event, ...) self[event](self, 
 MageMealMacro:SetAttribute("type", "macro");
 MageMealMacro:SetAttribute("macrotext", "/run MageMealMacro:Update()");
 local Drinks = {
-	"Conjured Glacial Water",
+	"Conjured Manna Biscuit",
+	"Conjured Glacier Water",
 	"Conjured Mountain Spring Water",
 	"Conjured Crystal Water",
 	"Conjured Sparkling Water",
@@ -14,6 +15,7 @@ local Drinks = {
 	"Conjured Water"
 }
 local Foods = {
+	"Conjured Manna Biscuit",
 	"Conjured Croissant",
 	"Conjured Cinnamon Roll",
 	"Conjured Sweet Roll",
@@ -23,10 +25,16 @@ local Foods = {
 	"Conjured Bread",
 	"Conjured Muffin"
 }
+local GoodDrinks = {
+	"Purified Draenic Water",
+	"Filtered Draenic Water"
+}
 local AURAS = {Drink = true, Food = true}
 
 local ICONS = {
   -- Drink
+  [27860] = true,
+  [28399] = true,
   [22018] = true,
   [30703] = true,
   [8079] = true,
@@ -49,6 +57,7 @@ local ICONS = {
 
 local health_threshold = .95
 local mana_threshold = 1
+local good_drink_threshold = .50
 
 
 MageMealMacro:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -82,6 +91,9 @@ function MageMealMacro:Update()
 	else
 		local macrotext = "/run MageMealMacro:Update()\n"
 		if UnitPower("player")/UnitPowerMax("player") < mana_threshold and self.drink ~= nil then
+			if UnitPower("player")/UnitPowerMax("player") < good_drink_threshold and self.good_drink ~= nil then
+				macrotext = macrotext .. "/use " .. self.good_drink .. "\n"
+			end
 			macrotext = macrotext .. "/use " .. self.drink .. "\n"
 		end
 		if UnitHealth("player")/UnitHealthMax("player") < health_threshold and self.food ~= nil then
@@ -107,6 +119,12 @@ function MageMealMacro:BAG_UPDATE()
 				SetMacroItem("Mage Meal", Drinks[i])
 				self:Update()
 			end
+			break
+		end
+	end
+	for i=1, #GoodDrinks do
+		if GetItemCount(GoodDrinks[i]) > 0 then
+			self.good_drink = GoodDrinks[i]
 			break
 		end
 	end
